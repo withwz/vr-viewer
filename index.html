@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+  <!--
+    2026-06-13 改造:加 <base> 让 srcdoc 模式下相对路径能解析到 /static/vr-viewer/。
+    - 这个 HTML 不再是 standalone 文件(via vite plugin serve),改成通过 Vite ?raw
+      打成字符串内嵌进主包,iframe 用 <iframe srcdoc="..."> 直接渲染
+    - <base> 覆盖 srcdoc 默认的 about:srcdoc base,让所有相对路径 = /static/vr-viewer/...
+
+    2026-06-13 再改造:base href 用相对路径 ./static/vr-viewer/ 而非绝对 /static/vr-viewer/。
+    原因:manifest.h5.publicPath = "./" + router.base = "./" → 主站支持子路径部署
+    (如 https://x.com/h5/),绝对 base href 在子路径下解析到根域 → 所有 PSV 资源 404。
+    改相对后,base 继承父页面 base URL → 根域/子路径部署都正确。
+
+    - lib/ + images/ 子资源仍走 /static/vr-viewer/... 真实 HTTP 请求(由 dist 提供,
+      dev 下由 vite plugin serveSrcStatic 提供)
+
+    文件位置:src/pages/vr-detail/vr-template.html
+    移出 src/static/ 的原因(2026-06-13):uni-app 的 uniStaticPlugin 拦截 src/static/**
+    的 import(作为 asset 处理,返回 URL 字符串),Vite ?raw 后缀在它的 resolveId 之后
+    找不到 handler,报 "Cannot find module"。lib/ 和 images/ 必须留在 src/static/(要
+    被 web server 真实 serve),所以只有这个 HTML 模板搬出来。
+  -->
+  <base href="./" />
+  <title>VR 全景</title>
+  <link rel="stylesheet" href="lib/photo-sphere-viewer.css" />
+  <link rel="stylesheet" href="viewer.css" />
+</head>
+<body>
+  <div id="loading" class="vr-state">加载中…</div>
+  <div id="error" class="vr-state vr-error" hidden></div>
+  <div id="psv-container"></div>
+  <footer id="thumbs-bar" hidden></footer>
+
+  <!--
+    srcdoc 模式下 window.location.search 拿不到 id(about:srcdoc 没有 query),
+    用占位符 __VR_ID__ 让 pages/vr-detail/index.vue 在设 srcdoc 前 replace 掉。
+    viewer.js 读 id 优先 window.__VR_SCENE_ID__,fallback 到 URL param 分支。
+  -->
+  <!-- standalone 版通过 URL 参数 ?id= 传 sceneId -->
+  <script>window.__VR_SCENE_ID__='';</script>
+  <script src="lib/photo-sphere-viewer.bundle.js"
+          onerror="document.getElementById('loading').hidden=true;var e=document.getElementById('error');e.hidden=false;e.textContent='viewer 资源缺失,请重新打包';"></script>
+  <script src="viewer.js"></script>
+</body>
+</html>

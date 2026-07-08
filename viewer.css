@@ -1,0 +1,134 @@
+/* VR Viewer 自定义样式 — 与 PSV 默认样式叠加 */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #fff;
+}
+
+/* 关键修复:HTML5 hidden 属性默认 display:none,但被下面 .vr-state 的
+   display:flex 用更高类选择器特异性覆盖,导致 #loading 永远盖在 PSV canvas
+   上方全屏遮挡。用 !important 兜住,让 hidden 真正生效。 */
+[hidden] {
+  display: none !important;
+}
+
+/* loading / error 居中态 */
+.vr-state {
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0A0F1A;
+  font-size: 14px;
+  z-index: 10;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.vr-error {
+  color: #f56c6c;
+}
+
+/* PSV 容器:占据除底部缩略图条以外的全部高度 */
+#psv-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 108px; /* 给 thumbs-bar 留高度,无缩略图时下面 :has 选择器拉满 */
+  background: #000;
+}
+
+/* 单场景(无缩略图条)时,容器拉满 */
+#psv-container:has(+ #thumbs-bar[hidden]) {
+  bottom: 0;
+}
+
+/* 底部缩略图条 */
+#thumbs-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 108px; /* 原 88px,11px 标签被裁切,提到 108 装下 54 图 + 6 gap + 12 标签 + 8×2 padding */
+  display: flex;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.78);
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+  z-index: 5;
+}
+
+#thumbs-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+#thumbs-bar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.vr-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px; /* 原 4px */
+  padding: 4px; /* 原 2px */
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  flex-shrink: 0;
+  transition: border-color 0.2s, background-color 0.2s, opacity 0.2s;
+  font-family: inherit;
+}
+
+.vr-thumb img {
+  width: 96px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 2px;
+  display: block;
+}
+
+.vr-thumb-name {
+  font-size: 12px; /* 原 11px,中文 11px 在 PC 浏览器渲染偏小不易读 */
+  line-height: 1.2; /* 显式控制,避免默认 1.5 把标签挤出条 */
+  max-width: 96px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* 选中态:金边 + 金底微透 + 字加粗 + 字变金,4 重信号不容易看错 */
+.vr-thumb.active {
+  border-color: #C9A96E;
+  background: rgba(201, 169, 110, 0.18);
+}
+
+.vr-thumb.active img {
+  /* 选中图稍微提亮,让 active 视觉信号在缩略图本身也体现 */
+  filter: brightness(1.1);
+}
+
+.vr-thumb.active .vr-thumb-name {
+  color: #C9A96E;
+  font-weight: 600;
+}
+
+.vr-thumb:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.08);
+  opacity: 0.95;
+}
